@@ -40,6 +40,27 @@ body {
   gap: 0.75rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.btn-reset {
+  padding: 0.4rem 0.75rem;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-reset:hover {
+  background: #1a4a7a;
+}
+
 .header h1 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -217,6 +238,51 @@ body {
   right: 0.5rem;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.refining-indicator {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.refining-indicator.visible {
+  opacity: 1;
+}
+
+.quality-tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.quality-btn {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.quality-btn:hover {
+  background: #1a4a7a;
+}
+
+.quality-btn.active {
+  background: #2563eb;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .footer {

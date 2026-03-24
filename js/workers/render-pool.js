@@ -37,6 +37,7 @@ function initWorkers() {
       pending.received++;
       if (pending.received === pending.total) {
         pendingStrips.delete(jobId);
+        if (jobId !== currentJobId) return;
         const { ctx, width, height, strips } = pending;
         const imageData = ctx.getImageData(0, 0, width, height);
         const out = imageData.data;
@@ -129,4 +130,8 @@ export function renderWithWorkers(canvas, params, onComplete) {
 
 export function getWorkerCount() {
   return workerCount;
+}
+
+export function cancelCurrentJob() {
+  currentJobId = -1;
 }

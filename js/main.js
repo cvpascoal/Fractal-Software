@@ -8,7 +8,7 @@ import { JuliaRenderer } from './fractal/julia.js';
 import { BurningShipRenderer } from './fractal/burning-ship.js';
 import { TricornRenderer } from './fractal/tricorn.js';
 import { createColorFnRgb } from './colors/coloring.js';
-import { renderWithWorkers } from './workers/render-pool.js';
+import { renderWithWorkers, cancelCurrentJob } from './workers/render-pool.js';
 import { setupZoomPan } from './ui/zoom-pan.js';
 import { createControls } from './ui/controls.js';
 
@@ -17,6 +17,7 @@ const container = document.getElementById('canvas-container');
 const coordsEl = document.getElementById('coords');
 const zoomEl = document.getElementById('zoom-level');
 const iterEl = document.getElementById('iterations-display');
+const refiningEl = document.getElementById('refining-indicator');
 
 const RENDERERS = {
   mandelbrot: new MandelbrotRenderer(canvas),
@@ -32,7 +33,8 @@ let state = {
   palette: 'ocean',
   paletteOffset: 0,
   juliaC: { real: -0.7, imag: 0.27 },
-  useWorkers: true
+  useWorkers: true,
+  qualityPreset: 'balanced'
 };
 
 let renderScheduled = false;
@@ -44,6 +46,12 @@ const INTERACTIVE_MAX_DIM = 520;
 const INTERACTIVE_ITER_SCALE = 0.55;
 const MIN_BASE_ITERATIONS = 35;
 const ITERATIONS_PER_ZOOM_DECADE = 70;
+
+const QUALITY_PRESETS = {
+  speed: { maxIterations: 80, iterPerDecade: 45 },
+  balanced: { maxIterations: 150, iterPerDecade: 70 },
+  quality: { maxIterations: 300, iterPerDecade: 95 }
+};
 
 function getDisplaySize() {
   return {
@@ -69,6 +77,8 @@ function applyRenderScale(scale) {
 
 function markInteraction() {
   isInteracting = true;
+  if (refiningEl) refiningEl.classList.remove('visible');
+  cancelCurrentJob();
   if (interactionTimer) clearTimeout(interactionTimer);
   interactionTimer = setTimeout(() => {
     isInteracting = false;
@@ -86,12 +96,13 @@ function scheduleRender() {
 }
 
 function computeAdaptiveIterations() {
+  const preset = QUALITY_PRESETS[state.qualityPreset] || QUALITY_PRESETS.balanced;
+  const qualityCap = Math.max(MIN_BASE_ITERATIONS, state.maxIterations);
   const zoom = Math.max(0.1, state.zoom || 1);
   const zoomDecades = Math.max(0, Math.log10(zoom));
   const zoomDriven = Math.floor(
-    MIN_BASE_ITERATIONS + zoomDecades * ITERATIONS_PER_ZOOM_DECADE
+    MIN_BASE_ITERATIONS + zoomDecades * preset.iterPerDecade
   );
-  const qualityCap = Math.max(MIN_BASE_ITERATIONS, state.maxIterations);
   const adaptive = Math.min(qualityCap, Math.max(MIN_BASE_ITERATIONS, zoomDriven));
 
   if (isInteracting) {
@@ -135,6 +146,7 @@ function render() {
 
   if (state.useWorkers) {
     const needsResize = currentRenderScale < 1;
+    if (refiningEl) refiningEl.classList.add('visible');
     renderWithWorkers(
       canvas,
       {
@@ -153,6 +165,7 @@ function render() {
         cImag: state.juliaC?.imag ?? 0.27
       },
       (offscreenCanvas) => {
+        if (refiningEl) refiningEl.classList.remove('visible');
         if (!offscreenCanvas || isInteracting) return;
         if (needsResize) applyRenderScale(1);
         canvas.getContext('2d').drawImage(offscreenCanvas, 0, 0);
@@ -187,6 +200,17 @@ function initZoomPan() {
     state.centerY = view.centerY;
     state.zoom = view.zoom;
     updateFooter(view.centerX, view.centerY, view.zoom);
+    scheduleRender();
+  });
+
+  document.getElementById('reset-view')?.addEventListener('click', () => {
+    cancelCurrentJob();
+    if (refiningEl) refiningEl.classList.remove('visible');
+    setView(0, 0, 1);
+    state.centerX = 0;
+    state.centerY = 0;
+    state.zoom = 1;
+    updateFooter(0, 0, 1);
     scheduleRender();
   });
 

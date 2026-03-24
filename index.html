@@ -10,12 +10,15 @@
   <div id="app">
     <header class="header">
       <h1>Fractal Explorer</h1>
-      <nav class="fractal-tabs" id="fractal-tabs">
+      <div class="header-actions">
+        <button type="button" class="btn-reset" id="reset-view" title="Reset zoom and pan">Reset view</button>
+        <nav class="fractal-tabs" id="fractal-tabs">
         <button class="tab active" data-fractal="mandelbrot">Mandelbrot</button>
         <button class="tab" data-fractal="julia">Julia</button>
         <button class="tab" data-fractal="burning-ship">Burning Ship</button>
         <button class="tab" data-fractal="tricorn">Tricorn</button>
       </nav>
+      </div>
     </header>
 
     <main class="main">
@@ -40,6 +43,14 @@
             <input type="checkbox" id="use-workers" checked>
             <label for="use-workers">Use Web Workers (parallel rendering)</label>
           </div>
+          <div class="control-group">
+            <label>Quality</label>
+            <div class="quality-tabs">
+              <button type="button" class="quality-btn" data-quality="speed">Speed</button>
+              <button type="button" class="quality-btn active" data-quality="balanced">Balanced</button>
+              <button type="button" class="quality-btn" data-quality="quality">Quality</button>
+            </div>
+          </div>
         </section>
         <section class="colors-section">
           <h3>Colors</h3>
@@ -61,6 +72,7 @@
       <div class="canvas-container" id="canvas-container">
         <canvas id="fractal-canvas"></canvas>
         <div class="zoom-hint">Scroll to zoom • Drag to pan</div>
+        <div class="refining-indicator" id="refining-indicator">Refining…</div>
       </div>
     </main>
 

@@ -5,6 +5,12 @@
 
 import { PALETTES } from '../colors/palettes.js';
 
+const QUALITY_PRESETS = {
+  speed: { maxIterations: 80 },
+  balanced: { maxIterations: 150 },
+  quality: { maxIterations: 300 }
+};
+
 const PALETTE_NAMES = {
   ocean: 'Ocean',
   cosmic: 'Cosmic',
@@ -26,6 +32,7 @@ export function createControls(state, onChange) {
   const paletteOffset = document.getElementById('palette-offset');
   const fractalTabs = document.getElementById('fractal-tabs');
   const useWorkersCheck = document.getElementById('use-workers');
+  const qualityTabs = document.querySelector('.quality-tabs');
 
   // Max iterations
   maxIter.value = state.maxIterations;
@@ -86,6 +93,26 @@ export function createControls(state, onChange) {
   useWorkersCheck.addEventListener('change', () => {
     onChange({ useWorkers: useWorkersCheck.checked });
   });
+
+  // Quality preset
+  if (qualityTabs) {
+    qualityTabs.querySelectorAll('.quality-btn').forEach(btn => {
+      if (state.qualityPreset === btn.dataset.quality) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.quality;
+        const { maxIterations } = QUALITY_PRESETS[preset] || QUALITY_PRESETS.balanced;
+        qualityTabs.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        maxIter.value = maxIterations;
+        maxIterVal.textContent = maxIterations;
+        onChange({ qualityPreset: preset, maxIterations });
+      });
+    });
+  }
 
   // Fractal tabs
   fractalTabs.querySelectorAll('.tab').forEach(tab => {
