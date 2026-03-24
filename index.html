@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fractal Explorer</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>Fractal Explorer</h1>
+      <nav class="fractal-tabs" id="fractal-tabs">
+        <button class="tab active" data-fractal="mandelbrot">Mandelbrot</button>
+        <button class="tab" data-fractal="julia">Julia</button>
+        <button class="tab" data-fractal="burning-ship">Burning Ship</button>
+        <button class="tab" data-fractal="tricorn">Tricorn</button>
+      </nav>
+    </header>
+
+    <main class="main">
+      <aside class="sidebar">
+        <section class="controls-section">
+          <h3>Parameters</h3>
+          <div class="control-group">
+            <label for="max-iter">Max iterations <span class="control-value" id="max-iter-val">150</span></label>
+            <input type="range" id="max-iter" min="20" max="500" value="150">
+          </div>
+          <div class="control-group julia-only" id="julia-c-group">
+            <label>Julia c</label>
+            <div class="input-row">
+              <input type="number" id="julia-c-real" value="-0.7" step="0.01" placeholder="Real">
+              <input type="number" id="julia-c-imag" value="0.27" step="0.01" placeholder="Imag">
+            </div>
+          </div>
+        </section>
+        <section class="colors-section">
+          <h3>Colors</h3>
+          <div class="control-group">
+            <label for="bg-color">Background</label>
+            <input type="color" id="bg-color" value="#000000">
+          </div>
+          <div class="control-group">
+            <label>Palette</label>
+            <div class="palette-grid" id="palette-grid"></div>
+          </div>
+          <div class="control-group">
+            <label for="palette-offset">Palette offset</label>
+            <input type="range" id="palette-offset" min="0" max="100" value="0">
+          </div>
+        </section>
+      </aside>
+
+      <div class="canvas-container" id="canvas-container">
+        <canvas id="fractal-canvas"></canvas>
+        <div class="zoom-hint">Scroll to zoom • Drag to pan</div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <span id="coords">x: 0, y: 0</span>
+      <span id="zoom-level">Zoom: 1x</span>
+      <span id="iterations-display">Iterations: 150</span>
+    </footer>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
