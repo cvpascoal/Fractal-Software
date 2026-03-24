@@ -101,6 +101,23 @@ body {
   margin-bottom: 1rem;
 }
 
+.control-group.control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-group.control-row input[type="checkbox"] {
+  width: auto;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.control-group.control-row label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
 .control-group label {
   display: block;
   font-size: 0.8rem;

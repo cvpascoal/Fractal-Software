@@ -25,6 +25,7 @@ export function createControls(state, onChange) {
   const paletteGrid = document.getElementById('palette-grid');
   const paletteOffset = document.getElementById('palette-offset');
   const fractalTabs = document.getElementById('fractal-tabs');
+  const useWorkersCheck = document.getElementById('use-workers');
 
   // Max iterations
   maxIter.value = state.maxIterations;
@@ -78,6 +79,12 @@ export function createControls(state, onChange) {
   paletteOffset.value = Math.round(offsetVal);
   paletteOffset.addEventListener('input', () => {
     onChange({ paletteOffset: parseFloat(paletteOffset.value) / 100 });
+  });
+
+  // Web Workers toggle
+  useWorkersCheck.checked = state.useWorkers !== false;
+  useWorkersCheck.addEventListener('change', () => {
+    onChange({ useWorkers: useWorkersCheck.checked });
   });
 
   // Fractal tabs

@@ -8,7 +8,7 @@ import { JuliaRenderer } from './fractal/julia.js';
 import { BurningShipRenderer } from './fractal/burning-ship.js';
 import { TricornRenderer } from './fractal/tricorn.js';
 import { createColorFnRgb } from './colors/coloring.js';
-import { PALETTES } from './colors/palettes.js';
+import { renderWithWorkers } from './workers/render-pool.js';
 import { setupZoomPan } from './ui/zoom-pan.js';
 import { createControls } from './ui/controls.js';
 
@@ -31,10 +31,50 @@ let state = {
   backgroundColor: '#000000',
   palette: 'ocean',
   paletteOffset: 0,
-  juliaC: { real: -0.7, imag: 0.27 }
+  juliaC: { real: -0.7, imag: 0.27 },
+  useWorkers: true
 };
 
 let renderScheduled = false;
+let isInteracting = false;
+let interactionTimer = null;
+let currentRenderScale = 1;
+const INTERACTION_DEBOUNCE_MS = 220;
+const INTERACTIVE_MAX_DIM = 520;
+const INTERACTIVE_ITER_SCALE = 0.55;
+const MIN_BASE_ITERATIONS = 35;
+const ITERATIONS_PER_ZOOM_DECADE = 70;
+
+function getDisplaySize() {
+  return {
+    width: Math.max(1, container.clientWidth),
+    height: Math.max(1, container.clientHeight)
+  };
+}
+
+function computeInteractiveScale() {
+  const { width, height } = getDisplaySize();
+  const longest = Math.max(width, height);
+  if (longest <= INTERACTIVE_MAX_DIM) return 1;
+  return INTERACTIVE_MAX_DIM / longest;
+}
+
+function applyRenderScale(scale) {
+  const { width, height } = getDisplaySize();
+  const scaledW = Math.max(1, Math.floor(width * scale));
+  const scaledH = Math.max(1, Math.floor(height * scale));
+  Object.values(RENDERERS).forEach((r) => r.resize(scaledW, scaledH));
+  currentRenderScale = scale;
+}
+
+function markInteraction() {
+  isInteracting = true;
+  if (interactionTimer) clearTimeout(interactionTimer);
+  interactionTimer = setTimeout(() => {
+    isInteracting = false;
+    scheduleRender();
+  }, INTERACTION_DEBOUNCE_MS);
+}
 
 function scheduleRender() {
   if (renderScheduled) return;
@@ -45,25 +85,94 @@ function scheduleRender() {
   });
 }
 
+function computeAdaptiveIterations() {
+  const zoom = Math.max(0.1, state.zoom || 1);
+  const zoomDecades = Math.max(0, Math.log10(zoom));
+  const zoomDriven = Math.floor(
+    MIN_BASE_ITERATIONS + zoomDecades * ITERATIONS_PER_ZOOM_DECADE
+  );
+  const qualityCap = Math.max(MIN_BASE_ITERATIONS, state.maxIterations);
+  const adaptive = Math.min(qualityCap, Math.max(MIN_BASE_ITERATIONS, zoomDriven));
+
+  if (isInteracting) {
+    return Math.max(MIN_BASE_ITERATIONS, Math.floor(adaptive * INTERACTIVE_ITER_SCALE));
+  }
+  return adaptive;
+}
+
 function render() {
   const renderer = RENDERERS[state.fractal];
   if (!renderer) return;
 
+  const targetScale = isInteracting ? computeInteractiveScale() : 1;
+  const willUseWorkersOffscreen = !isInteracting && state.useWorkers && currentRenderScale < 1;
+  if (targetScale !== currentRenderScale && !willUseWorkersOffscreen) {
+    applyRenderScale(targetScale);
+  }
+
+  const iterations = computeAdaptiveIterations();
+
+  if (isInteracting) {
+    renderer.centerX = state.centerX;
+    renderer.centerY = state.centerY;
+    renderer.zoom = state.zoom;
+    renderer.maxIterations = iterations;
+    if (state.fractal === 'julia') {
+      renderer.setC(state.juliaC.real, state.juliaC.imag);
+    }
+    const getColor = createColorFnRgb(
+      state.palette,
+      state.backgroundColor,
+      state.paletteOffset
+    );
+    renderer.render(getColor);
+    return;
+  }
+
+  const { width: displayW, height: displayH } = getDisplaySize();
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (state.useWorkers) {
+    const needsResize = currentRenderScale < 1;
+    renderWithWorkers(
+      canvas,
+      {
+        width: displayW,
+        height: displayH,
+        renderToOffscreen: true,
+        fractal: state.fractal,
+        centerX: state.centerX,
+        centerY: state.centerY,
+        zoom: state.zoom,
+        maxIterations: iterations,
+        palette: state.palette,
+        backgroundColor: state.backgroundColor,
+        paletteOffset: state.paletteOffset,
+        cReal: state.juliaC?.real ?? -0.7,
+        cImag: state.juliaC?.imag ?? 0.27
+      },
+      (offscreenCanvas) => {
+        if (!offscreenCanvas || isInteracting) return;
+        if (needsResize) applyRenderScale(1);
+        canvas.getContext('2d').drawImage(offscreenCanvas, 0, 0);
+      }
+    );
+    return;
+  }
+
   renderer.centerX = state.centerX;
   renderer.centerY = state.centerY;
   renderer.zoom = state.zoom;
-  renderer.maxIterations = state.maxIterations;
-
+  renderer.maxIterations = iterations;
   if (state.fractal === 'julia') {
     renderer.setC(state.juliaC.real, state.juliaC.imag);
   }
-
   const getColor = createColorFnRgb(
     state.palette,
     state.backgroundColor,
-    state.paletteOffset / 100
+    state.paletteOffset
   );
-
   renderer.render(getColor);
 }
 
@@ -73,6 +182,7 @@ function initZoomPan() {
   state.zoom = 1;
 
   const { setView } = setupZoomPan(canvas, (view) => {
+    markInteraction();
     state.centerX = view.centerX;
     state.centerY = view.centerY;
     state.zoom = view.zoom;
@@ -84,16 +194,16 @@ function initZoomPan() {
 }
 
 function updateFooter(cx, cy, zoom) {
+  const effectiveIterations = computeAdaptiveIterations();
   coordsEl.textContent = `x: ${cx.toExponential(4)}, y: ${cy.toExponential(4)}`;
   zoomEl.textContent = `Zoom: ${zoom.toFixed(1)}x`;
-  iterEl.textContent = `Iterations: ${state.maxIterations}`;
+  iterEl.textContent = `Iterations: ${effectiveIterations}/${state.maxIterations}`;
 }
 
 function setupCanvasResize() {
   const resize = () => {
-    const w = Math.max(1, container.clientWidth);
-    const h = Math.max(1, container.clientHeight);
-    Object.values(RENDERERS).forEach(r => r.resize(w, h));
+    const targetScale = isInteracting ? computeInteractiveScale() : 1;
+    applyRenderScale(targetScale);
     scheduleRender();
   };
 
@@ -118,6 +228,7 @@ function init() {
   setupCanvasResize();
   initZoomPan();
   createControls(state, (updates) => {
+    markInteraction();
     Object.assign(state, updates);
     updateFooter(state.centerX, state.centerY, state.zoom);
     scheduleRender();
