@@ -51,11 +51,25 @@ function smoothIteration(iterations, maxIter, zx, zy) {
   return iterations + 1 - nu;
 }
 
-function pixelToComplex(px, py, width, height, centerX, centerY, zoom) {
+function pixelToComplex(px, py, width, height, centerX, centerY, zoom, warpPhase = 0, warpAmount = 0) {
   const aspect = width / height;
   const scale = 4 / (zoom * Math.min(width, height));
-  const x = centerX + (px - width / 2) * scale * aspect;
-  const y = centerY - (py - height / 2) * scale;
+  let x = centerX + (px - width / 2) * scale * aspect;
+  let y = centerY - (py - height / 2) * scale;
+  if (warpAmount > 0) {
+    const nx = px / width - 0.5;
+    const ny = py / height - 0.5;
+    const waveX =
+      Math.sin(ny * 8 + warpPhase * 1.7) +
+      0.5 * Math.sin(ny * 14 - warpPhase * 0.9);
+    const waveY =
+      Math.cos(nx * 9 - warpPhase * 1.3) +
+      0.5 * Math.cos(nx * 15 + warpPhase * 0.7);
+    const dxPixels = waveX * warpAmount * 6;
+    const dyPixels = waveY * warpAmount * 6;
+    x += dxPixels * scale * aspect;
+    y -= dyPixels * scale;
+  }
   return { x, y };
 }
 
@@ -80,7 +94,9 @@ function renderMandelbrot(params) {
     escapeRadius,
     palette,
     bgRgb,
-    offset
+    offset,
+    warpPhase,
+    warpAmount
   } = params;
   const escSq = escapeRadius * escapeRadius;
   const stripHeight = yEnd - yStart;
@@ -95,7 +111,9 @@ function renderMandelbrot(params) {
         height,
         centerX,
         centerY,
-        zoom
+        zoom,
+        warpPhase,
+        warpAmount
       );
       let zx = 0,
         zy = 0;
@@ -144,7 +162,9 @@ function renderJulia(params) {
     bgRgb,
     offset,
     cReal,
-    cImag
+    cImag,
+    warpPhase,
+    warpAmount
   } = params;
   const escSq = escapeRadius * escapeRadius;
   const stripHeight = yEnd - yStart;
@@ -159,7 +179,9 @@ function renderJulia(params) {
         height,
         centerX,
         centerY,
-        zoom
+        zoom,
+        warpPhase,
+        warpAmount
       );
       let iterations = 0;
       while (iterations < maxIterations) {
@@ -204,7 +226,9 @@ function renderBurningShip(params) {
     escapeRadius,
     palette,
     bgRgb,
-    offset
+    offset,
+    warpPhase,
+    warpAmount
   } = params;
   const escSq = escapeRadius * escapeRadius;
   const stripHeight = yEnd - yStart;
@@ -219,7 +243,9 @@ function renderBurningShip(params) {
         height,
         centerX,
         centerY,
-        zoom
+        zoom,
+        warpPhase,
+        warpAmount
       );
       let zx = 0,
         zy = 0;
@@ -266,7 +292,9 @@ function renderTricorn(params) {
     escapeRadius,
     palette,
     bgRgb,
-    offset
+    offset,
+    warpPhase,
+    warpAmount
   } = params;
   const escSq = escapeRadius * escapeRadius;
   const stripHeight = yEnd - yStart;
@@ -281,7 +309,9 @@ function renderTricorn(params) {
         height,
         centerX,
         centerY,
-        zoom
+        zoom,
+        warpPhase,
+        warpAmount
       );
       let zx = 0,
         zy = 0;
@@ -313,11 +343,61 @@ function renderTricorn(params) {
   return data;
 }
 
+const NEWTON_ROOTS = [
+  { re: 1, im: 0 },
+  { re: -0.5, im: Math.sqrt(3) / 2 },
+  { re: -0.5, im: -Math.sqrt(3) / 2 }
+];
+const NEWTON_EPS = 1e-6;
+
+function renderNewton(params) {
+  const { width, height, yStart, yEnd, centerX, centerY, zoom, maxIterations, palette, bgRgb, offset, warpPhase, warpAmount } = params;
+  const stripHeight = yEnd - yStart;
+  const data = new Uint8ClampedArray(width * stripHeight * 4);
+
+  for (let py = yStart; py < yEnd; py++) {
+    for (let px = 0; px < width; px++) {
+      let { x: zx, y: zy } = pixelToComplex(px, py, width, height, centerX, centerY, zoom, warpPhase, warpAmount);
+      let iterations = 0;
+      let rootIdx = -1;
+
+      while (iterations < maxIterations) {
+        const z2 = zx * zx + zy * zy;
+        if (z2 < 1e-20) break;
+        const z3re = zx * (zx * zx - 3 * zy * zy) - 1;
+        const z3im = zy * (3 * zx * zx - zy * zy);
+        const denom = 3 * z2 * z2;
+        const newZx = zx - (zx * z3re + zy * z3im) / denom;
+        const newZy = zy - (zy * z3re - zx * z3im) / denom;
+        zx = newZx;
+        zy = newZy;
+        iterations++;
+        for (let i = 0; i < 3; i++) {
+          const r = NEWTON_ROOTS[i];
+          const d = (zx - r.re) ** 2 + (zy - r.im) ** 2;
+          if (d < NEWTON_EPS * NEWTON_EPS) { rootIdx = i; break; }
+        }
+        if (rootIdx >= 0) break;
+      }
+
+      const t = rootIdx >= 0 ? rootIdx / 3 + iterations / (maxIterations * 3) : 0;
+      const rgb = colorAt(rootIdx >= 0 ? iterations : maxIterations, maxIterations, zx, zy, palette, bgRgb, offset);
+      const i = ((py - yStart) * width + px) * 4;
+      data[i] = rgb[0];
+      data[i + 1] = rgb[1];
+      data[i + 2] = rgb[2];
+      data[i + 3] = 255;
+    }
+  }
+  return data;
+}
+
 const RENDERERS = {
   mandelbrot: renderMandelbrot,
   julia: renderJulia,
   'burning-ship': renderBurningShip,
-  tricorn: renderTricorn
+  tricorn: renderTricorn,
+  newton: renderNewton
 };
 
 self.onmessage = (e) => {

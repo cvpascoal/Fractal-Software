@@ -61,6 +61,87 @@ body {
   background: #1a4a7a;
 }
 
+.btn-icon {
+  padding: 0.4rem 0.5rem;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-icon:hover {
+  background: #1a4a7a;
+}
+
+.preset-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.preset-btns .preset-btn {
+  padding: 0.3rem 0.5rem;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.preset-btns .preset-btn:hover {
+  background: #1a4a7a;
+}
+
+.btn-save-bookmark {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.btn-save-bookmark:hover {
+  background: #1a4a7a;
+}
+
+.loading-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1s ease-in-out infinite;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.loading-skeleton.visible {
+  opacity: 1;
+}
+
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.click-hint {
+  display: none;
+}
+
+.click-hint.visible {
+  display: inline;
+}
+
 .header h1 {
   font-size: 1.25rem;
   font-weight: 600;
@@ -283,6 +364,26 @@ body {
 .quality-btn.active {
   background: #2563eb;
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+.toast {
+  position: fixed;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .footer {

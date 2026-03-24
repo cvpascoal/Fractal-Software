@@ -111,7 +111,9 @@ export function renderWithWorkers(canvas, params, onComplete) {
       backgroundColor: params.backgroundColor,
       offset: params.paletteOffset ?? 0,
       cReal: params.cReal ?? -0.7,
-      cImag: params.cImag ?? 0.27
+      cImag: params.cImag ?? 0.27,
+      warpPhase: params.warpPhase ?? 0,
+      warpAmount: params.warpAmount ?? 0
     });
   }
 

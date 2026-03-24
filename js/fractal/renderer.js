@@ -15,6 +15,8 @@ export class FractalRenderer {
     this.zoom = 1;
     this.maxIterations = 100;
     this.escapeRadius = 4;
+    this.warpPhase = 0;
+    this.warpAmount = 0;
   }
 
   resize(width, height) {
@@ -30,8 +32,22 @@ export class FractalRenderer {
   pixelToComplex(px, py) {
     const aspect = this.width / this.height;
     const scale = 4 / (this.zoom * Math.min(this.width, this.height));
-    const x = this.centerX + (px - this.width / 2) * scale * aspect;
-    const y = this.centerY - (py - this.height / 2) * scale;
+    let x = this.centerX + (px - this.width / 2) * scale * aspect;
+    let y = this.centerY - (py - this.height / 2) * scale;
+    if (this.warpAmount > 0) {
+      const nx = px / this.width - 0.5;
+      const ny = py / this.height - 0.5;
+      const waveX =
+        Math.sin(ny * 8 + this.warpPhase * 1.7) +
+        0.5 * Math.sin(ny * 14 - this.warpPhase * 0.9);
+      const waveY =
+        Math.cos(nx * 9 - this.warpPhase * 1.3) +
+        0.5 * Math.cos(nx * 15 + this.warpPhase * 0.7);
+      const dxPixels = waveX * this.warpAmount * 6;
+      const dyPixels = waveY * this.warpAmount * 6;
+      x += dxPixels * scale * aspect;
+      y -= dyPixels * scale;
+    }
     return { x, y };
   }
 

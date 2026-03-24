@@ -11,12 +11,17 @@
     <header class="header">
       <h1>Fractal Explorer</h1>
       <div class="header-actions">
-        <button type="button" class="btn-reset" id="reset-view" title="Reset zoom and pan">Reset view</button>
+        <button type="button" class="btn-icon" id="btn-fullscreen" title="Fullscreen (F)">⛶</button>
+        <button type="button" class="btn-icon" id="btn-export" title="Export PNG (Ctrl+E)">↓</button>
+        <button type="button" class="btn-icon" id="btn-copy" title="Copy to clipboard">⎘</button>
+        <button type="button" class="btn-icon" id="btn-share" title="Copy share URL">🔗</button>
+        <button type="button" class="btn-reset" id="reset-view" title="Reset zoom (R)">Reset</button>
         <nav class="fractal-tabs" id="fractal-tabs">
         <button class="tab active" data-fractal="mandelbrot">Mandelbrot</button>
         <button class="tab" data-fractal="julia">Julia</button>
         <button class="tab" data-fractal="burning-ship">Burning Ship</button>
         <button class="tab" data-fractal="tricorn">Tricorn</button>
+        <button class="tab" data-fractal="newton">Newton</button>
       </nav>
       </div>
     </header>
@@ -67,11 +72,40 @@
             <input type="range" id="palette-offset" min="0" max="100" value="0">
           </div>
         </section>
+        <section class="controls-section">
+          <h3>Explore</h3>
+          <div class="control-group">
+            <label>Interesting spots</label>
+            <div class="preset-btns" id="interesting-spots"></div>
+          </div>
+          <div class="control-group" id="bookmarks-group">
+            <label>Bookmarks</label>
+            <div class="preset-btns" id="bookmarks-list"></div>
+            <button type="button" class="btn-save-bookmark" id="save-bookmark">Save current view</button>
+          </div>
+          <div class="control-group control-row">
+            <input type="checkbox" id="animate-palette">
+            <label for="animate-palette">Animate palette</label>
+          </div>
+          <div class="control-group control-row">
+            <input type="checkbox" id="animate-motion">
+            <label for="animate-motion">Float motion (tentacle-like)</label>
+          </div>
+          <div class="control-group">
+            <label for="animate-quality">Animation quality</label>
+            <select id="animate-quality">
+              <option value="speed">Speed</option>
+              <option value="balanced" selected>Balanced</option>
+              <option value="quality">Quality</option>
+            </select>
+          </div>
+        </section>
       </aside>
 
       <div class="canvas-container" id="canvas-container">
+        <div class="loading-skeleton" id="loading-skeleton"></div>
         <canvas id="fractal-canvas"></canvas>
-        <div class="zoom-hint">Scroll to zoom • Drag to pan</div>
+        <div class="zoom-hint" id="zoom-hint">Scroll to zoom • Drag to pan • R=reset • 1–5=fractals • F=fullscreen <span id="click-hint" class="click-hint"></span></div>
         <div class="refining-indicator" id="refining-indicator">Refining…</div>
       </div>
     </main>

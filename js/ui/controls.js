@@ -114,14 +114,10 @@ export function createControls(state, onChange) {
     });
   }
 
-  // Fractal tabs
+  // Fractal tabs (onChange triggers setFractalUI in main)
   fractalTabs.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      const fractal = tab.dataset.fractal;
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      juliaCGroup.style.display = fractal === 'julia' ? 'block' : 'none';
-      onChange({ fractal });
+      onChange({ fractal: tab.dataset.fractal });
     });
   });
 }
